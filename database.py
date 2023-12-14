@@ -13,7 +13,7 @@ class Read:
             data = []
             for r in rows:
                 data.append(dict(r))
-            return Table(table_name,data)
+        return Table(table_name,data)
 
 
 # add in code for a Database class
@@ -29,6 +29,21 @@ class DB:
             if table.table_name == table_name:
                 return table
         return None
+
+    def get_table_column(self, table_name):
+        for table in self.database:
+            if table.table_name == table_name:
+                return list(table.table[0].keys())
+
+    def get_all_table(self):
+        return [table.table_name for table in self.database]
+
+    def get_table_data(self, table_name):
+        for table in self.database:
+            if table.table_name == table_name:
+                return table.table
+        return None
+
 
 
 # add in code for a Table class
@@ -67,6 +82,22 @@ class Table:
                     dict_temp[key] = item1[key]
             temps.append(dict_temp)
         return temps
+
+    def append(self, item):
+        self.table.append(item)
+
+    def update(self, func, key, val):
+        filter_table = self.filter(func)
+        if filter_table:
+            for row in filter_table:
+                row[key] = val
+
+    def delete(self, func, key, val):
+        filter_table = self.filter(func)
+        if filter_table:
+            for row in filter_table:
+                if key in row and row[key] == val:
+                    filter_table.table.remove(row)
 
     def __str__(self):
         return str(self.table)
