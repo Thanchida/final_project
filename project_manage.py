@@ -359,7 +359,8 @@ class Lead(Student):
     def get_more_advisor(self):
         # This function is designed to prevent faculties from accepting invitations simultaneously,
         # ensuring that invitations are not sent to more than one people.
-        pending_advisor = database.search('advisor_pending_request').filter(lambda x: x['project_id'] == self.project_id)
+        pending_advisor = database.search('advisor_pending_request').filter(
+            lambda x: x['project_id'] == self.project_id)
         num = 0
         for i in pending_advisor:
             if i['status'] == 'waiting':
@@ -428,7 +429,7 @@ class Lead(Student):
 
             # Check if the faculty member has been invited, accepted, or denied an invitation for the current project.
             for j in pending_table:
-                if faculty['ID'] == j['to_be_advisor'] and j['status'] == 'Accept' and j['lead'] == self.username or\
+                if faculty['ID'] == j['to_be_advisor'] and j['status'] == 'Accept' and j['lead'] == self.username or \
                         faculty['ID'] == j['to_be_advisor'] and j['status'] == 'Deny' and j['lead'] == self.username:
                     invited = True
                     break
@@ -485,7 +486,7 @@ class Member(Lead):
 
     def member_menu(self):
         self.project = Project(database.search('project').filter(lambda x: x['member_1'] == self.username or
-                                                                 x['member_2'] == self.username))
+                                                                           x['member_2'] == self.username))
         self.project_id = self.project.project_id
         while True:
             try:
@@ -518,7 +519,8 @@ class Member(Lead):
         return self.project
 
     def check_faculty_response(self):
-        pending_advisor = database.search('advisor_pending_request').filter(lambda x: x['project_id'] == self.project_id)
+        pending_advisor = database.search('advisor_pending_request').filter(
+            lambda x: x['project_id'] == self.project_id)
         print('---FACULTY RESPONSE---')
         for i in pending_advisor.table:
             print('username: ', self.find_name(i['to_be_advisor']))
@@ -549,9 +551,10 @@ class Advisor(User):
                 print('4. See request to be an advisor for other project')
                 print('5. See request for evaluate')
                 print('6. Evaluate project')
+                print('7. Check evaluator response')
                 print('99. Back to Log In')
                 choice = int(input('Enter your choice: '))
-                if choice not in (1, 2, 3, 4, 5, 6, 99):
+                if choice not in (1, 2, 3, 4, 5, 6, 7, 99):
                     print('Try again! Invalid choice.')
                 elif choice == 1:
                     self.get_project().get_project_data(self.project_id)
@@ -565,6 +568,8 @@ class Advisor(User):
                     self.see_request_for_evaluate()
                 elif choice == 6:
                     self.approve_project()
+                elif choice == 7:
+                    self.check_evaluator_response()
                 elif choice == 99:
                     break
             except ValueError:
@@ -577,7 +582,8 @@ class Advisor(User):
         faculty_table = database.search('login').filter(lambda x: x['role'] == 'faculty' or x['role'] == 'advisor')
         project_table = database.search('project').filter(lambda x: x['advisor'] == self.username)
         evaluate_pending = database.search('evaluate_request')
-        advisor_pending = database.search('advisor_pending_request').filter(lambda x: x['to_be_advisor'] == self.user_id and x['status'] == 'Accept')
+        advisor_pending = database.search('advisor_pending_request').filter(
+            lambda x: x['to_be_advisor'] == self.user_id and x['status'] == 'Accept')
         project = ''
         invited_faculty_ids = set()  # Keep track of invited faculty IDs
         if len(advisor_pending.table) > 1:
@@ -616,7 +622,7 @@ class Advisor(User):
 
             evaluate_pending.table.append(
                 {'project_id': project, 'title': self.title, 'lead': self.lead, 'to_be_evaluator': faculty_id,
-                 'status': 'waiting', 'num_approve': int(0)})
+                 'status': 'waiting', 'num_approve': int(0), 'advisor': self.username})
             print(f'Request {faculty_id} Success.')
 
     def get_more_evaluator(self, project_id):
@@ -634,8 +640,9 @@ class Advisor(User):
 
     def faculty_check_request(self):
         pending_advisor = database.search('advisor_pending_request').filter(lambda x: x['to_be_advisor']
-                                                                            == str(self.user_id) and x['status']
-                                                                            == 'waiting')
+                                                                                      == str(self.user_id) and x[
+                                                                                          'status']
+                                                                                      == 'waiting')
         project_table = database.search('project')
         accepted_response = False
         no_request = True
@@ -666,7 +673,8 @@ class Advisor(User):
             print(f'You already be a advisor of {title} project')
 
             # Update status from 'waiting' to 'Accept'
-            pending_advisor.update(lambda x: x['to_be_advisor'] == self.user_id and x['title'] == title, 'status', 'Accept')
+            pending_advisor.update(lambda x: x['to_be_advisor'] == self.user_id and x['title'] == title, 'status',
+                                   'Accept')
 
             # Update role from 'faculty' to 'advisor'
             login_table.update(lambda x: x['ID'] == self.user_id, 'role', 'advisor')
@@ -684,8 +692,9 @@ class Advisor(User):
 
     def accept_more_request(self):
         pending_advisor = database.search('advisor_pending_request').filter(lambda x: x['to_be_advisor']
-                                                                            == str(self.user_id) and x['status']
-                                                                            == 'Accept')
+                                                                                      == str(self.user_id) and x[
+                                                                                          'status']
+                                                                                      == 'Accept')
         num = 0
         # Count how many request accepted
         for i in pending_advisor.table:
@@ -694,7 +703,8 @@ class Advisor(User):
         return num < 3
 
     def see_request_for_evaluate(self):
-        evaluate_pending = database.search('evaluate_request').filter(lambda x: x['to_be_evaluator'] == str(self.user_id))
+        evaluate_pending = database.search('evaluate_request').filter(
+            lambda x: x['to_be_evaluator'] == str(self.user_id) and x['status'] == 'waiting')
         # default requests_exist to be false to check that the faculty have request or not
         requests_exist = False
 
@@ -714,6 +724,24 @@ class Advisor(User):
         if not requests_exist:
             print('Not Have Request')
             return
+
+    def check_evaluator_response(self):
+        pending_evaluator = database.search('evaluate_request').filter(lambda x: x['advisor'] == self.username)
+        print('---EVALUATOR RESPONSE---')
+        for i in pending_evaluator:
+            print('username: ', self.find_name(i['to_be_evaluator']))
+            print('user_id: ', i['to_be_evaluator'])
+            print('status: ', i['status'])
+            print('---------------------')
+
+        # Check if any student responded with 'Deny'
+        for j in pending_evaluator:
+            if j['status'] == 'Deny':
+                # Check if there is room to invite more faculty (less than 2 faculty invited)
+                if self.get_more_evaluator(j['project_id']):
+                    choose = input('Do you want to request more?(y/n): ')
+                    if choose == 'y':
+                        self.invite_to_evaluate()
 
     def evaluation(self):
         project_table = database.search('project')
@@ -745,12 +773,14 @@ class Advisor(User):
                     if evaluate_decision.lower() == 'y':
                         # Check if the project is not already approved
                         if project['status'] != 'Approve':
+                            # If evaluator approve change 'num_approve' from 0 to 2
                             evaluate_request['num_approve'] = str(int(evaluate_request['num_approve']) + 2)
                             print('Thank you. Your evaluation was successful.')
                         else:
                             print('Project is already approved.')
 
                     elif evaluate_decision.lower() == 'n':
+                        # If evaluator deny change 'num_approve' from 0 to 1
                         evaluate_request['num_approve'] = str(int(evaluate_request['num_approve']) + 1)
                         print('Thank you. Your evaluation was successful.')
 
@@ -771,7 +801,7 @@ class Advisor(User):
         project_table = database.search('project')
         evaluate_table = database.search('evaluate_request')
 
-        # Check that project has been evaluated by both of evaluators
+        # Check that project has been evaluated by both of evaluators(by check 'num_approve' != 0)
         project_for_evaluate = evaluate_table.filter(lambda x: x['project_id'] == id and x['num_approve'] != str(0))
 
         num = 0
@@ -1015,8 +1045,9 @@ class Faculty(User):
 
     def faculty_check_request(self):
         pending_advisor = database.search('advisor_pending_request').filter(lambda x: x['to_be_advisor']
-                                                                            == str(self.user_id) and x['status']
-                                                                            == 'waiting')
+                                                                                      == str(self.user_id) and x[
+                                                                                          'status']
+                                                                                      == 'waiting')
         project_table = database.search('project')
         accepted_response = False
         no_request = True
@@ -1048,7 +1079,8 @@ class Faculty(User):
             print('Accept Success')
             print(f'You already be a advisor of {title} project')
             # Update the status from 'waiting' to 'Accept' in the pending advisor table
-            pending_advisor.update(lambda x: x['to_be_advisor'] == self.user_id and x['title'] == title, 'status', 'Accept')
+            pending_advisor.update(lambda x: x['to_be_advisor'] == self.user_id and x['title'] == title, 'status',
+                                   'Accept')
 
             # Update role from 'faculty' to 'advisor' in the login table
             login_table.update(lambda x: x['ID'] == self.user_id, 'role', 'advisor')
@@ -1075,7 +1107,8 @@ class Faculty(User):
         return num < 3
 
     def see_request_for_evaluate(self):
-        evaluate_pending = database.search('evaluate_request').filter(lambda x: x['to_be_evaluator'] == str(self.user_id))
+        evaluate_pending = database.search('evaluate_request').filter(
+            lambda x: x['to_be_evaluator'] == str(self.user_id) and x['status'] == 'waiting')
         # default requests_exist to be false to check that the faculty have request or not
         requests_exist = False
 
