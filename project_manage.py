@@ -211,8 +211,9 @@ class Student(User):
             print(f'You already be a member of {title} project')
 
             # update status from 'waiting' to 'Accept'
-            pending_member.update(lambda x: x['to_be_member'] == self.user_id, 'status', 'Accept')
-
+            pending_member.update(lambda x: x['to_be_member'] == self.user_id and x['lead'] == lead, 'status', 'Accept')
+            # update status of project that student doesn't choose to be 'Deny'
+            pending_member.update(lambda x: x['to_be_member'] == self.user_id and x['lead'] != lead, 'status', 'Deny')
             # change role form 'student' to 'member'
             login_table.update(lambda x: x['ID'] == self.user_id, 'role', 'member')
 
@@ -576,11 +577,13 @@ class Advisor(User):
         faculty_table = database.search('login').filter(lambda x: x['role'] == 'faculty' or x['role'] == 'advisor')
         project_table = database.search('project').filter(lambda x: x['advisor'] == self.username)
         evaluate_pending = database.search('evaluate_request')
-
+        advisor_pending = database.search('advisor_pending_request').filter(lambda x: x['to_be_advisor'] == self.user_id and x['status'] == 'Accept')
+        project = ''
         invited_faculty_ids = set()  # Keep track of invited faculty IDs
-
+        if len(advisor_pending.table) > 1:
+            project = input('What project you want to invite evaluator?(enter project_id): ')
         while True:
-            if not self.get_more_evaluator():
+            if not self.get_more_evaluator(project):
                 print("Can't invite more faculty.")
                 break
             # Create a set to store usernames of advisors
@@ -607,19 +610,19 @@ class Advisor(User):
             invited_faculty_ids.add(faculty_id)
 
             for j in project_table:
-                self.project_id = j['project_id']
-                self.title = j['title']
-                self.lead = j['lead']
+                if j['project_id'] == project:
+                    self.title = j['title']
+                    self.lead = j['lead']
 
             evaluate_pending.table.append(
-                {'project_id': self.project_id, 'title': self.title, 'lead': self.lead, 'to_be_evaluator': faculty_id,
+                {'project_id': project, 'title': self.title, 'lead': self.lead, 'to_be_evaluator': faculty_id,
                  'status': 'waiting', 'num_approve': int(0)})
             print(f'Request {faculty_id} Success.')
 
-    def get_more_evaluator(self):
+    def get_more_evaluator(self, project_id):
         # This function is designed to prevent advisors from accepting invitations simultaneously,
         # ensuring that invitations are not sent to more than two people.
-        pending_evaluate = database.search('evaluate_request').filter(lambda x: x['title'] == self.title)
+        pending_evaluate = database.search('evaluate_request').filter(lambda x: x['project_id'] == project_id)
         num = 0
         for i in pending_evaluate:
             if i['status'] == 'waiting':
@@ -691,26 +694,26 @@ class Advisor(User):
         return num < 3
 
     def see_request_for_evaluate(self):
-        evaluate_pending = database.search('evaluate_request')
+        evaluate_pending = database.search('evaluate_request').filter(lambda x: x['to_be_evaluator'] == str(self.user_id))
         # default requests_exist to be false to check that the faculty have request or not
         requests_exist = False
 
         for i in evaluate_pending:
-            if i['to_be_evaluator'] == self.user_id:
-                print(f'Advisor of {i["title"]} project invites you to be an evaluator')
-                requests_exist = True
+            requests_exist = True
+            print(f'Advisor of {i["title"]} project invites you to be an evaluator')
+            choose = input('Do you want to accept or deny? (y/n): ')
+            if choose == 'y':
+                # Update status from 'waiting' to 'Accept'
+                evaluate_pending.update(lambda x: x['to_be_evaluator'] == self.user_id and x['title'] == i['title']
+                                        , 'status', 'Accept')
+            elif choose == 'n':
+                # Update status from 'waiting' to 'Deny'
+                evaluate_pending.update(lambda x: x['to_be_evaluator'] == self.user_id and x['title'] == i['title']
+                                        , 'status', 'Deny')
 
         if not requests_exist:
             print('Not Have Request')
             return
-
-        choose = input('Do you want to accept or deny? (y/n): ')
-        if choose == 'y':
-            # Update status from 'waiting' to 'Accept'
-            evaluate_pending.update(lambda x: x['to_be_evaluator'] == self.user_id, 'status', 'Accept')
-            # Update status from 'waiting' to 'Deny'
-        elif choose == 'n':
-            evaluate_pending.update(lambda x: x['to_be_evaluator'] == self.user_id, 'status', 'Deny')
 
     def evaluation(self):
         project_table = database.search('project')
@@ -778,11 +781,10 @@ class Advisor(User):
                 num += int(evaluate_request['num_approve'])
 
         # Update the project status
-        for project in project_table:
-            if num == 4:
-                project_table.update(lambda x: x['project_id'] == project['project_id'], 'status', 'Approve')
-            elif num < 4:
-                project_table.update(lambda x: x['project_id'] == project['project_id'], 'status', 'Under Review')
+        if num == 4:
+            project_table.update(lambda x: x['project_id'] == id, 'status', 'Approve')
+        elif num < 4:
+            project_table.update(lambda x: x['project_id'] == id, 'status', 'Under Review')
 
         return None
 
@@ -1078,20 +1080,21 @@ class Faculty(User):
         requests_exist = False
 
         for i in evaluate_pending:
-            print(f'Advisor of {i["title"]} project invites you to be an evaluator')
             requests_exist = True
+            print(f'Advisor of {i["title"]} project invites you to be an evaluator')
+            choose = input('Do you want to accept or deny? (y/n): ')
+            if choose == 'y':
+                # Update status from 'waiting' to 'Accept'
+                evaluate_pending.update(lambda x: x['to_be_evaluator'] == self.user_id and x['title'] == i['title']
+                                        , 'status', 'Accept')
+            elif choose == 'n':
+                # Update status from 'waiting' to 'Deny'
+                evaluate_pending.update(lambda x: x['to_be_evaluator'] == self.user_id and x['title'] == i['title']
+                                        , 'status', 'Deny')
 
         if not requests_exist:
             print('Not Have Request')
             return
-
-        choose = input('Do you want to accept or deny? (y/n): ')
-        if choose == 'y':
-            # Update status from 'waiting' to 'Accept'
-            evaluate_pending.update(lambda x: x['to_be_evaluator'] == self.user_id, 'status', 'Accept')
-        elif choose == 'n':
-            # Update status from 'waiting' to 'Deny'
-            evaluate_pending.update(lambda x: x['to_be_evaluator'] == self.user_id, 'status', 'Deny')
 
     def evaluation(self):
         project_table = database.search('project')
@@ -1159,11 +1162,10 @@ class Faculty(User):
                 num += int(evaluate_request['num_approve'])
 
         # Update the project status
-        for project in project_table:
-            if num == 4:
-                project_table.update(lambda x: x['project_id'] == project['project_id'], 'status', 'Approve')
-            elif num < 4:
-                project_table.update(lambda x: x['project_id'] == project['project_id'], 'status', 'Under Review')
+        if num == 4:
+            project_table.update(lambda x: x['project_id'] == id, 'status', 'Approve')
+        elif num < 4:
+            project_table.update(lambda x: x['project_id'] == id, 'status', 'Under Review')
 
         return None
 
