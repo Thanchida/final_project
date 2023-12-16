@@ -7,6 +7,10 @@
         - Add new student to the 'person.csv' file and the 'login.csv' file.
     - Add new faculty.
         - Add new faculty to the 'person.csv' file and the 'login.csv' file.
+    - Delete student
+        - Delete student from the 'person.csv' file and the 'login.csv' file.
+    - Delete faculty
+        - Delete faculty from the 'person.csv' file and the 'login.csv' file.
 - Report data in the database:
     - List of current project leads.
     - List of current members.
@@ -17,16 +21,16 @@
 **STUDENT**
 - Choose to create project or not.
     - If a student chooses to create a project, change their role from 'student' to 'lead'.
-    - If another lead invites them to another project (indicated by an ID in the to_be_member's value in the 'member_pending_request.csv' file), change the status's value from 'waiting' to 'Deny'.
+        - Create a project.
+          - The lead will enter a title.
+          - Generate a random project_ID.
+          - Set the default status of the project to 'Processing'.
+- If another lead invites them to another project (indicated by an ID in the to_be_member's value in the 'member_pending_request.csv' file), change the status's value from 'waiting' to 'Deny'.
 - See pending invitations and choose to accept or deny them.
     - If a student chooses to accept an invitation, change their role from 'student' to 'member'.
 
 
 **LEADER**
-- Create a project.
-    - The lead will enter a title.
-    - Generate a random project_ID.
-    - Set the default status of the project to 'Processing'.
 - Invite students to be members.
     - Set a limit to allow only 2 student invitations. If a student denies an invitation, the lead can then invite more.
 - Invite faculty to e advisors.
