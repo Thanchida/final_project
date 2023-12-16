@@ -925,9 +925,12 @@ class Admin:
             print('3. List of advisors')
             print('4. Add new student')
             print('5. Add new faculty')
+            print('6. Delete student')
+            print('7. Delete faculty')
+            print('8. Delete all user')
             print('99. Back to Log In')
             choice = int(input('Enter your choice: '))
-            if choice not in (1, 2, 3, 4, 5, 99):
+            if choice not in (1, 2, 3, 4, 5, 6, 7, 99):
                 print('Try again! Invalid choice.')
             if choice == 1:
                 # Display a list of members
@@ -974,6 +977,10 @@ class Admin:
             elif choice == 5:
                 # Add a new faculty
                 self.add_new_faculty()
+            elif choice == 6:
+                self.delete_student()
+            elif choice == 7:
+                self.delete_faculty()
             elif choice == 99:
                 break
 
@@ -1004,6 +1011,36 @@ class Admin:
         person_table.table.append({'ID': id, 'fist': first, 'last': last, 'type': 'faculty'})
         login_table.table.append({'ID': id, 'username': username, 'password': password, 'role': 'faculty'})
         print("Successfully add a new faculty.")
+
+    def delete_student(self):
+        person_table = database.search('persons')
+        login_table = database.search('login')
+        first = input('Enter first name: ')
+        last = input('Enter last name: ')
+        username = f"{first}.{last[0]}"
+
+        for i in person_table:
+            if i['fist'] == first and i['last'] == last and i['type'] == 'student':
+                person_table.table.remove(i)
+        for j in login_table:
+            if j['username'] == username and j['role'] == 'student':
+                login_table.table.remove(j)
+        print("Successfully Delete Student.")
+
+    def delete_faculty(self):
+        person_table = database.search('persons')
+        login_table = database.search('login')
+        first = input('Enter first name: ')
+        last = input('Enter last name: ')
+        username = f"{first}.{last[0]}"
+
+        for i in person_table:
+            if i['fist'] == first and i['last'] == last and i['type'] == 'faculty':
+                person_table.table.remove(i)
+        for j in login_table:
+            if j['username'] == username and j['role'] == 'faculty':
+                login_table.table.remove(j)
+        print("Successfully Delete Faculty.")
 
 
 class Faculty(User):
