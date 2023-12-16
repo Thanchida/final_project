@@ -640,9 +640,8 @@ class Advisor(User):
 
     def faculty_check_request(self):
         pending_advisor = database.search('advisor_pending_request').filter(lambda x: x['to_be_advisor']
-                                                                                      == str(self.user_id) and x[
-                                                                                          'status']
-                                                                                      == 'waiting')
+                                                                            == str(self.user_id) and x['status']
+                                                                            == 'waiting')
         project_table = database.search('project')
         accepted_response = False
         no_request = True
@@ -734,7 +733,7 @@ class Advisor(User):
             print('status: ', i['status'])
             print('---------------------')
 
-        # Check if any student responded with 'Deny'
+        # Check if any faculty responded with 'Deny'
         for j in pending_evaluator:
             if j['status'] == 'Deny':
                 # Check if there is room to invite more faculty (less than 2 faculty invited)
@@ -1045,9 +1044,8 @@ class Faculty(User):
 
     def faculty_check_request(self):
         pending_advisor = database.search('advisor_pending_request').filter(lambda x: x['to_be_advisor']
-                                                                                      == str(self.user_id) and x[
-                                                                                          'status']
-                                                                                      == 'waiting')
+                                                                            == str(self.user_id) and x['status']
+                                                                            == 'waiting')
         project_table = database.search('project')
         accepted_response = False
         no_request = True
