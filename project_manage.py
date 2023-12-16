@@ -588,6 +588,9 @@ class Advisor(User):
         invited_faculty_ids = set()  # Keep track of invited faculty IDs
         if len(advisor_pending.table) > 1:
             project = input('What project you want to invite evaluator?(enter project_id): ')
+        else:
+            for pro in project_table:
+                project = pro['project_id']
         while True:
             if not self.get_more_evaluator(project):
                 print("Can't invite more faculty.")
@@ -608,9 +611,6 @@ class Advisor(User):
             if faculty_id in invited_faculty_ids:
                 print(f'Faculty with ID {faculty_id} has already been invited. Please enter a different ID.')
                 continue
-            choose = input('Do you want to request more? (y/n): ')
-            if choose.lower() == 'n':
-                break
 
             # Add the faculty ID to the set of invited faculty
             invited_faculty_ids.add(faculty_id)
@@ -624,6 +624,10 @@ class Advisor(User):
                 {'project_id': project, 'title': self.title, 'lead': self.lead, 'to_be_evaluator': faculty_id,
                  'status': 'waiting', 'num_approve': int(0), 'advisor': self.username})
             print(f'Request {faculty_id} Success.')
+
+            choose = input('Do you want to request more? (y/n): ')
+            if choose.lower() == 'n':
+                break
 
     def get_more_evaluator(self, project_id):
         # This function is designed to prevent advisors from accepting invitations simultaneously,
