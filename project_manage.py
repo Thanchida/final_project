@@ -542,6 +542,7 @@ class Advisor(User):
         self.lead = ''
 
     def advisor_menu(self):
+        project_table = database.search('project').filter(lambda x: x['advisor'] == self.username)
         while True:
             try:
                 print('------ADVISOR MENU------')
@@ -561,7 +562,12 @@ class Advisor(User):
                 elif choice == 2:
                     self.project.modify_project(self.project_id)
                 elif choice == 3:
-                    self.invite_to_evaluate()
+                    # Check whether the lead has already submitted the project or not.
+                    for project in project_table:
+                        if project['status'] == 'waiting for evaluation':
+                            self.invite_to_evaluate()
+                    # If the project is not submitted, the advisor is not allowed to invite the evaluator.
+                    print('Please submit project first.')
                 elif choice == 4:
                     self.faculty_check_request()
                 elif choice == 5:
@@ -586,9 +592,11 @@ class Advisor(User):
             lambda x: x['to_be_advisor'] == self.user_id and x['status'] == 'Accept')
         project = ''
         invited_faculty_ids = set()  # Keep track of invited faculty IDs
+        # Be an advisor of project more than 1 project
         if len(advisor_pending.table) > 1:
             project = input('What project you want to invite evaluator?(enter project_id): ')
         else:
+            # Be an advisor of project only one project
             for pro in project_table:
                 project = pro['project_id']
         while True:
@@ -656,7 +664,7 @@ class Advisor(User):
 
             # If the faculty member accepts the request, update the project table
             if accepted_response:
-                if self.project.advisor == '':
+                if self.project.advisor == '' and self.project.lead == i['lead']:
                     project_table.update(lambda x: x['advisor'] == '', 'advisor', self.username)
                 if not self.accept_more_request():
                     accepted_response = True
@@ -695,9 +703,8 @@ class Advisor(User):
 
     def accept_more_request(self):
         pending_advisor = database.search('advisor_pending_request').filter(lambda x: x['to_be_advisor']
-                                                                                      == str(self.user_id) and x[
-                                                                                          'status']
-                                                                                      == 'Accept')
+                                                                            == str(self.user_id) and x['status']
+                                                                            == 'Accept')
         num = 0
         # Count how many request accepted
         for i in pending_advisor.table:
@@ -1097,7 +1104,7 @@ class Faculty(User):
 
             # If the faculty member accepts the request, update the project table
             if accepted_response:
-                if self.project.advisor == '':
+                if self.project.advisor == '' and self.project.lead == i['lead']:
                     project_table.update(lambda x: x['advisor'] == '', 'advisor', self.username)
                 if not self.accept_more_request():
                     accepted_response = True
