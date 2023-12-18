@@ -52,7 +52,7 @@
 ## **How to compile and run**
 - ### **project_manage.py(main program)**
 - ### **Files Needed to Run the Main Program**
-    - database.py
+    - database.py(Import the 'read' class and 'DB' class from the 'database.py' file.)
     - project.csv
     - member_pending_request.csv
     - advisor_pending_request.csv
@@ -115,3 +115,4 @@ password: # Enter password
 ## **List of Missing Features and Outstanding Bugs**
 - Users can't change their passwords.
 - If a lead decides to create a project, they can't cancel it.
+- If evaluator rejected project,lead can't send it again
